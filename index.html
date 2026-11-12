@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sprint3D: Accelerating End-to-End 3D Asset Generation through Pipeline Optimization</title>
+<meta name="description" content="One image to a textured GLB in 4.05 s: 33× faster than the released Pixal3D at the official export (about 1M faces, 4096² texture). Alaya Lab technical report.">
+<meta property="og:title" content="Sprint3D: Accelerating End-to-End 3D Asset Generation through Pipeline Optimization">
+<meta property="og:description" content="One image to a textured GLB in 4.05 s: 33× faster than the released Pixal3D at the official export.">
+<meta property="og:url" content="https://alaya-lab.github.io/sprint3d/">
+<meta property="og:image" content="https://alaya-lab.github.io/sprint3d/assets/images/teaser_hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="assets/figures/alayalab-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>document.documentElement.classList.add("js");</script>
+<!-- Asset list for the 3D viewer (web copies of eleven exported GLBs). -->
+<script>
+window.PAGE_CONFIG = {
+  "scenes": [
+    {
+      "id": "leather-chair",
+      "label": "Leather chair",
+      "category": "Furniture",
+      "glb": "assets/models/leather-chair.glb.js",
+      "input": "assets/images/inputs/leather-chair.webp",
+      "preview": "assets/images/previews/leather-chair.jpg",
+      "facesWeb": 100000,
+      "facesExport": 922380,
+      "yaw": 25
+    },
+    {
+      "id": "man-in-a-coat",
+      "label": "Man in a coat",
+      "category": "Person",
+      "glb": "assets/models/man-in-a-coat.glb.js",
+      "input": "assets/images/inputs/man-in-a-coat.webp",
+      "preview": "assets/images/previews/man-in-a-coat.jpg",
+      "facesWeb": 100000,
+      "facesExport": 952980,
+      "yaw": 25
+    },
+    {
+      "id": "toy-robot",
+      "label": "Toy robot",
+      "category": "Robot",
+      "glb": "assets/models/toy-robot.glb.js",
+      "input": "assets/images/inputs/toy-robot.webp",
+      "preview": "assets/images/previews/toy-robot.jpg",
+      "facesWeb": 100000,
+      "facesExport": 938664,
+      "yaw": 25
+    },
+    {
+      "id": "toy-dog",
+      "label": "Toy dog",
+      "category": "Animal",
+      "glb": "assets/models/toy-dog.glb.js",
+      "input": "assets/images/inputs/toy-dog.webp",
+      "preview": "assets/images/previews/toy-dog.jpg",
+      "facesWeb": 100000,
+      "facesExport": 937964,
+      "yaw": 25
+    },
+    {
+      "id": "arcade-cabinet",
+      "label": "Arcade cabinet",
+      "category": "Machine",
+      "glb": "assets/models/arcade-cabinet.glb.js",
+      "input": "assets/images/inputs/arcade-cabinet.webp",
+      "preview": "assets/images/previews/arcade-cabinet.jpg",
+      "facesWeb": 100000,
+      "facesExport": 957506,
+      "yaw": 25
+    },
+    {
+      "id": "hammer",
+      "label": "Hammer",
+      "category": "Tool",
+      "glb": "assets/models/hammer.glb.js",
+      "input": "assets/images/inputs/hammer.webp",
+      "preview": "assets/images/previews/hammer.jpg",
+      "facesWeb": 100000,
+      "facesExport": 988988,
+      "yaw": 25
+    },
+    {
+      "id": "office-stool",
+      "label": "Office stool",
+      "category": "Furniture",
+      "glb": "assets/models/office-stool.glb.js",
+      "input": "assets/images/inputs/office-stool.webp",
+      "preview": "assets/images/previews/office-stool.jpg",
+      "facesWeb": 100000,
+      "facesExport": 938714,
+      "yaw": 25
+    },
+    {
+      "id": "wooden-barrel",
+      "label": "Wooden barrel",
+      "category": "Container",
+      "glb": "assets/models/wooden-barrel.glb.js",
+      "input": "assets/images/inputs/wooden-barrel.webp",
+      "preview": "assets/images/previews/wooden-barrel.jpg",
+      "facesWeb": 100000,
+      "facesExport": 993700,
+      "yaw": 25
+    },
+    {
+      "id": "suitcase",
+      "label": "Suitcase",
+      "category": "Container",
+      "glb": "assets/models/suitcase.glb.js",
+      "input": "assets/images/inputs/suitcase.webp",
+      "preview": "assets/images/previews/suitcase.jpg",
+      "facesWeb": 100000,
+      "facesExport": 953660,
+      "yaw": 25
+    },
+    {
+      "id": "lantern",
+      "label": "Lantern",
+      "category": "Lamp",
+      "glb": "assets/models/lantern.glb.js",
+      "input": "assets/images/inputs/lantern.webp",
+      "preview": "assets/images/previews/lantern.jpg",
+      "facesWeb": 100000,
+      "facesExport": 978995,
+      "yaw": 25
+    },
+    {
+      "id": "tropical-fish",
+      "label": "Tropical fish",
+      "category": "Animal",
+      "glb": "assets/models/tropical-fish.glb.js",
+      "input": "assets/images/inputs/tropical-fish.webp",
+      "preview": "assets/images/previews/tropical-fish.jpg",
+      "facesWeb": 100000,
+      "facesExport": 943638,
+      "yaw": 25
+    }
+  ]
+};
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<!-- ================= HEADER ================= -->
+<header class="site-header">
+  <nav class="nav-inner" aria-label="Sections">
+    <a class="brand" href="#hero"><img src="assets/figures/alayalab-logo.png" alt="">Alaya Lab<small>Technical report</small></a>
+    <div class="nav-links">
+      <a href="#demo">Outputs</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
+      <a class="nav-cta" href="#demo">Explore 3D</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+<!-- ================= HERO (backdrop: the teaser render of Figure 1, 28 assets on a dark floor) ================= -->
+<section class="hero" id="hero">
+  <div class="hero-backdrop" aria-hidden="true"><img src="assets/images/teaser_hero.jpg" srcset="assets/images/teaser_hero_1200.jpg 1200w, assets/images/teaser_hero.jpg 2400w" sizes="100vw" alt=""></div>
+  <div class="hero-shade" aria-hidden="true"></div>
+  <div class="hero-content wrap">
+    <div class="eyebrow"><span class="draft">Alaya Lab · Technical report · 2026</span></div>
+    <h1>Sprint3D: Accelerating <span class="nowrap">End-to-End</span> <span class="nowrap">3D Asset</span> Generation through <span class="nowrap">Pipeline Optimization</span></h1>
+    <p class="hero-subtitle">From one image to a textured 3D asset in <b>4.05 s</b>,<br>33× faster than the released Pixal3D.</p>
+    <div class="hero-links">
+      <a class="ac-button primary" href="#demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Explore the assets</a>
+      <span class="ac-button soon" aria-disabled="true" title="arXiv listing pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Paper <small>soon</small></span>
+      <a class="ac-button" href="https://github.com/AlayaLab/sprint3d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>Code</a>
+      <a class="ac-button" href="https://huggingface.co/AlayaLab/sprint3d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>Weights</a>
+      <a class="ac-button" href="#bibtex">BibTeX</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TIME BARS (strip of Figure 1; per-stage means from the appendix profile table) ================= -->
+<section id="timing" aria-labelledby="timing-title">
+  <div class="wrap">
+    <div class="panel strip" role="group" aria-label="Time from image to textured asset: Base (Pixal3D) 133 seconds, ours 4.05 seconds, 33 times faster">
+      <h2 id="timing-title" class="index" style="margin-bottom:16px">Image to textured GLB · one H200 GPU · median of 77 inputs · split by mean stage times</h2>
+      <div class="strip-row"><div class="strip-label">Base (Pixal3D)</div><div class="strip-track"><div class="strip-line"><div class="strip-bar" style="width:100.000%"><span style="width:0.077%;background:var(--st-prep)" tabindex="0" role="img" aria-label="Input pre-processing: 0.12 s on average" data-tip="Input pre-processing: 0.12 s on average"></span><span style="width:0.718%;background:var(--st-ss)" tabindex="0" role="img" aria-label="Structure flow: 1.12 s on average" data-tip="Structure flow: 1.12 s on average"></span><span style="width:1.020%;background:var(--st-lr)" tabindex="0" role="img" aria-label="Coarse-shape flow: 1.59 s on average" data-tip="Coarse-shape flow: 1.59 s on average"></span><span style="width:7.541%;background:var(--st-hr)" tabindex="0" role="img" aria-label="Fine-shape flow: 11.76 s on average" data-tip="Fine-shape flow: 11.76 s on average"></span><span style="width:4.469%;background:var(--st-tex)" tabindex="0" role="img" aria-label="Texture flow: 6.97 s on average" data-tip="Texture flow: 6.97 s on average"></span><span style="width:7.163%;background:var(--st-mesh)" tabindex="0" role="img" aria-label="Mesh extraction and remesh: 11.17 s on average" data-tip="Mesh extraction and remesh: 11.17 s on average"></span><span style="width:60.564%;background:var(--st-uv)" tabindex="0" role="img" aria-label="UV unwrapping: 94.45 s on average" data-tip="UV unwrapping: 94.45 s on average"></span><span style="width:13.549%;background:var(--st-bake)" tabindex="0" role="img" aria-label="Texture bake: 21.13 s on average" data-tip="Texture bake: 21.13 s on average"></span><span style="width:4.200%;background:var(--st-export)" tabindex="0" role="img" aria-label="GLB export: 6.55 s on average" data-tip="GLB export: 6.55 s on average"></span><span style="width:0.699%;background:var(--st-other)" tabindex="0" role="img" aria-label="Other: 1.09 s on average" data-tip="Other: 1.09 s on average"></span></div><span class="strip-val">133 s</span></div></div></div>
+      <div class="strip-row"><div class="strip-label">Ours</div><div class="strip-track"><div class="strip-line"><div class="strip-bar" style="width:3.045%"><span style="width:4.933%;background:var(--st-prep)" tabindex="0" role="img" aria-label="Input pre-processing: 0.22 s on average" data-tip="Input pre-processing: 0.22 s on average"></span><span style="width:7.848%;background:var(--st-ss)" tabindex="0" role="img" aria-label="Structure flow: 0.35 s on average" data-tip="Structure flow: 0.35 s on average"></span><span style="width:4.260%;background:var(--st-lr)" tabindex="0" role="img" aria-label="Coarse-shape flow: 0.19 s on average" data-tip="Coarse-shape flow: 0.19 s on average"></span><span style="width:15.919%;background:var(--st-hr)" tabindex="0" role="img" aria-label="Fine-shape flow: 0.71 s on average" data-tip="Fine-shape flow: 0.71 s on average"></span><span style="width:31.166%;background:var(--st-tex)" tabindex="0" role="img" aria-label="Texture flow: 1.39 s on average" data-tip="Texture flow: 1.39 s on average"></span><span style="width:10.090%;background:var(--st-mesh)" tabindex="0" role="img" aria-label="Mesh extraction and remesh: 0.45 s on average" data-tip="Mesh extraction and remesh: 0.45 s on average"></span><span style="width:0.673%;background:var(--st-uv)" tabindex="0" role="img" aria-label="UV unwrapping: 0.03 s on average" data-tip="UV unwrapping: 0.03 s on average"></span><span style="width:16.592%;background:var(--st-bake)" tabindex="0" role="img" aria-label="Texture bake: 0.74 s on average" data-tip="Texture bake: 0.74 s on average"></span><span style="width:6.278%;background:var(--st-export)" tabindex="0" role="img" aria-label="GLB export: 0.28 s on average" data-tip="GLB export: 0.28 s on average"></span><span style="width:2.242%;background:var(--st-other)" tabindex="0" role="img" aria-label="Other: 0.10 s on average" data-tip="Other: 0.10 s on average"></span></div><span class="strip-val">4.05 s<span class="strip-x">33× FASTER</span></span></div></div></div>
+      <div class="tip" aria-hidden="true"></div>
+    </div>
+    <div class="note-row">
+      <div class="strip-legend"><span><i style="background:var(--st-ss)"></i>Networks</span><span><i style="background:var(--st-uv)"></i>Mesh post-processing</span><span><i style="background:var(--st-prep)"></i>Input and other</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3D VIEWER ================= -->
+<section id="demo" aria-labelledby="demo-title">
+  <div class="wrap">
+    <div class="section-heading reveal">
+      <h2 id="demo-title">Outputs<span>Assets generated by our pipeline, each from one image.</span></h2>
+      <div class="section-tag">INTERACTIVE · WEBGL</div>
+    </div>
+    <div class="panel ws-viewer reveal">
+      <div class="viewer-topbar">
+        <div class="asset-heading" aria-live="polite"><span class="index">ASSET</span><h3 class="asset-title">–</h3><p class="asset-cat"></p></div>
+        <div class="viewer-ctrl">
+          <span class="ctrl-lbl">Shading</span>
+          <div class="seg" role="group" aria-label="Shading"><button type="button" class="on" data-mode="tex" aria-pressed="true">Textured</button><button type="button" data-mode="clay" aria-pressed="false">Clay</button></div>
+          <button class="icon-btn btn-rotate" type="button" title="Auto-rotate" aria-label="Auto-rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2 11.5a10 10 0 0 1 18.8-4.3"/><path d="M22 12.5a10 10 0 0 1-18.8 4.2"/></svg></button>
+          <button class="icon-btn btn-reset" type="button" title="Reset view" aria-label="Reset view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg></button>
+        </div>
+      </div>
+      <div class="viewer-shell">
+        <figure class="input-reference"><img alt="Input image" width="140" height="140"><figcaption>INPUT IMAGE</figcaption></figure>
+        <canvas class="ws-canvas" aria-label="Interactive 3D view of the selected generated asset"></canvas>
+        <div class="ws-loader show"><div class="ws-loader-label">The 3D viewer starts when this section is on screen.</div><div class="ws-loader-bar"><div class="ws-loader-fill"></div></div></div>
+        <div class="viewer-tip">Drag to rotate · scroll or pinch to zoom · right-drag to pan</div>
+      </div>
+      <div class="viewer-bar">
+        <div class="scene-tabs" role="group" aria-label="Choose a generated asset"></div>
+      </div>
+    </div>
+    <p class="small-note viewer-note reveal">Web copies: 100k faces, 1024² textures. Exported assets: about 1M faces, 4096² textures.</p>
+  </div>
+</section>
+
+<!-- ================= RESULTS: main comparison = Toys4K test part (tables/tab_toys4k_test_1m_main.tex = Table 4 of the report; tab_app_other_metrics_t4ktest.tex) ================= -->
+<section id="results" aria-labelledby="results-title">
+  <div class="wrap">
+    <div class="section-heading reveal">
+      <h2 id="results-title">Single-image generation<span>Input-view normal maps against the ground truth, following the Pixal3D paper.</span></h2>
+      <div class="section-tag">TOYS4K TEST · 2,653 OBJECTS</div>
+    </div>
+    <p class="lead reveal">At the same export settings our pipeline is 33× faster and on par with or better than the released Pixal3D on the normal metrics, with a slightly lower silhouette IoU.</p>
+    <div class="panel table-card reveal">
+      <table class="res-table res-small res-wide">
+        <caption>Time per image: median of the timing run on validation inputs, one H200 GPU.</caption>
+        <thead><tr><th>Method</th><th>Silhouette IoU<small>(%) ↑</small></th><th>Normal PSNR<small>(dB, overlap region) ↑</small></th><th>Mean angular error<small>(°) ↓</small></th><th>Chamfer distance<small>(×10⁻³) ↓</small></th><th>F-score<small>@0.01 ↑</small></th><th>ULIP-2<small>↑</small></th><th>Uni3D<small>↑</small></th><th>Time per image<small>(s) ↓</small></th></tr></thead>
+        <tbody><tr><td>TRELLIS.2</td><td>79.55</td><td>17.15</td><td>25.06</td><td>28.01</td><td>0.523</td><td>0.424</td><td>0.394</td><td>–</td></tr><tr><td>TripoSG</td><td>59.87</td><td>14.22</td><td>38.87</td><td>58.62</td><td>0.239</td><td>0.397</td><td>0.373</td><td>–</td></tr><tr><td>Hunyuan3D-2.1</td><td>59.82</td><td>14.31</td><td>39.33</td><td>59.94</td><td>0.264</td><td>0.442</td><td>0.403</td><td>–</td></tr></tbody><tbody class="group-ours"><tr><td>Base (Pixal3D)</td><td><b>96.97</b></td><td>20.87</td><td>14.25</td><td>26.61</td><td>0.392</td><td><b>0.423</b></td><td><b>0.391</b></td><td>133.0</td></tr><tr class="ours"><td><b>Ours</b></td><td>96.78</td><td><b>21.56</b></td><td><b>13.00</b></td><td><b>25.55</b></td><td><b>0.408</b></td><td>0.415</td><td>0.385</td><td><b>4.05</b></td></tr></tbody>
+      </table>
+    </div>
+    <p class="small-note after-table reveal">Chamfer distance and F-score use each method's own frame, without alignment. Ours is slightly lower on ULIP-2 and Uni3D, which the report traces to thicker inner walls of the remeshed shells.</p>
+
+    <!-- validation set (tables/tab_app_main_validation_dev_r1020.tex panel (a) = tab_main_dev400_1m_r1010.tex; tab_app_other_metrics_val_test_r1020.tex panel (a)) -->
+    <div class="sub-block reveal">
+      <div class="subhead">Secondary comparison · 400 validation objects</div>
+      <h3>Validation set</h3>
+      <p class="lead">These objects also served model selection. The same picture holds, with a slightly lower mean silhouette IoU from six failure objects.</p>
+      <div class="panel table-card">
+        <table class="res-table res-small res-wide">
+        <caption>Time per image on one H200 GPU.</caption>
+        <thead><tr><th>Method</th><th>Silhouette IoU<small>(%) ↑</small></th><th>Normal PSNR<small>(dB, overlap region) ↑</small></th><th>Mean angular error<small>(°) ↓</small></th><th>Chamfer distance<small>(×10⁻³) ↓</small></th><th>F-score<small>@0.01 ↑</small></th><th>ULIP-2<small>↑</small></th><th>Uni3D<small>↑</small></th><th>Time per image<small>(s) ↓</small></th></tr></thead>
+        <tbody><tr><td>TRELLIS.2</td><td>71.88</td><td>15.80</td><td>28.92</td><td>34.44</td><td>0.414</td><td>0.404</td><td>0.367</td><td>–</td></tr><tr><td>TripoSG</td><td>60.35</td><td>13.39</td><td>40.45</td><td>57.33</td><td>0.207</td><td>0.361</td><td>0.333</td><td>–</td></tr><tr><td>Hunyuan3D-2.1</td><td>64.90</td><td>14.47</td><td>34.56</td><td>42.28</td><td>0.286</td><td>0.418</td><td>0.375</td><td>–</td></tr></tbody><tbody class="group-ours"><tr><td>Base (Pixal3D)</td><td><b>96.60</b></td><td>19.20</td><td>17.22</td><td>38.50</td><td>0.314</td><td><b>0.406</b></td><td><b>0.367</b></td><td>133.0</td></tr><tr class="ours"><td><b>Ours</b></td><td>96.33</td><td><b>19.82</b></td><td><b>15.92</b></td><td><b>37.24</b></td><td><b>0.332</b></td><td>0.395</td><td>0.359</td><td><b>4.05</b></td></tr></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BIBTEX ================= -->
+<section id="bibtex" aria-labelledby="bibtex-title">
+  <div class="wrap">
+    <div class="section-heading reveal">
+      <h2 id="bibtex-title">BibTeX<span>Technical report, 2026. arXiv identifier to follow.</span></h2>
+    </div>
+    <div class="panel bib-card reveal">
+      <button class="copy-btn" id="copy-bib" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+<pre id="bib-text">@misc{kuno2026sprint3d,
+  title  = {Sprint3D: Accelerating End-to-End 3D Asset Generation through Pipeline Optimization},
+  author = {Kuno, Sho and Yu, Ruihan and Yu, Yonghao and
+            Lin, Guixu and Fu, Lian and Niu, Muyao and
+            Tsai, Yu-Ju and Huang, Zheng-Hui and Huang, Yi-Chuan and
+            Yang, Siqi and Lan, Fengbo and Wu, Erwin and
+            Zhang, Kaipeng and Wang, Zhixiang},
+  year   = {2026},
+  note   = {Alaya Lab technical report}
+}</pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ================= FOOTER (authors, as on the lab's MeshAxiom page) ================= -->
+<footer class="site-footer">
+  <div class="wrap">
+    <ul class="paper-authors" aria-label="Authors"><li>Sho Kuno<sup>1,2</sup></li><li>Ruihan Yu<sup>1,2</sup></li><li>Yonghao Yu<sup>1</sup></li><li>Guixu Lin<sup>1</sup></li><li>Lian Fu<sup>1,2</sup></li><li>Muyao Niu<sup>1,2</sup></li><li>Yu-Ju Tsai<sup>1,3</sup></li><li>Zheng-Hui Huang<sup>1</sup></li><li>Yi-Chuan Huang<sup>1,5</sup></li><li>Siqi Yang<sup>1</sup></li><li>Fengbo Lan<sup>1</sup></li><li>Erwin Wu<sup>1,4</sup></li><li>Kaipeng Zhang<sup>1</sup></li><li>Zhixiang Wang<sup>1</sup></li></ul>
+    <p class="affils"><span><sup>1</sup>Alaya Lab</span><span><sup>2</sup>The University of Tokyo</span><span><sup>3</sup>University of California, Merced</span><span><sup>4</sup>Institute of Science Tokyo</span><span><sup>5</sup>National Yang Ming Chiao Tung University</span></p>
+    <div class="footer-inner">
+      <a class="footer-brand" href="#hero"><img src="assets/figures/alayalab-logo.png" alt=""><span><strong>Alaya Lab</strong><small>Sprint3D: Accelerating End-to-End 3D Asset Generation through Pipeline Optimization</small></span></a>
+      <p>Alaya Lab · 2026</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<!-- The viewer module is inlined (copy of assets/js/viewer.js): browsers refuse module scripts from file:// URLs. -->
+<script type="module">
+/* GLB viewer for the "Outputs" section (ground shadow darkened for the dark page, 2026-11-04).
+   three.js r160 from a pinned CDN (import map in index.html). Models ship as
+   assets/models/<id>.glb.js, a script that registers the base64-encoded GLB, so the
+   page also works when opened from file:// (browsers block fetch() of local files). */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+window.__viewerModule = true;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const loader = new GLTFLoader();
+window.__glb = window.__glb || {};
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => { s.remove(); reject(new Error('could not load ' + src)); };
+    document.head.appendChild(s);
+  });
+}
+async function glbBuffer(cfg) {
+  if (!window.__glb[cfg.id]) await loadScript(cfg.glb);
+  const b64 = window.__glb[cfg.id];
+  if (!b64) throw new Error('model data missing for ' + cfg.id);
+  const bin = atob(b64), n = bin.length, u8 = new Uint8Array(n);
+  for (let i = 0; i < n; i++) u8[i] = bin.charCodeAt(i);
+  return u8.buffer;
+}
+function parseGLB(buffer) {
+  // Use <img>-based texture decoding (TextureLoader): it works for blob: URLs on file:// pages too.
+  const cib = window.createImageBitmap;
+  try { window.createImageBitmap = undefined; } catch (_) {}
+  return new Promise((resolve, reject) => {
+    try { loader.parse(buffer, '', resolve, reject); } catch (e) { reject(e); }
+    finally { try { window.createImageBitmap = cib; } catch (_) {} }
+  });
+}
+function disposeGroup(group) {
+  group.traverse(o => {
+    if (!o.isMesh) return;
+    o.geometry.dispose();
+    const mats = new Set([o.userData.texMat, o.userData.clayMat].filter(Boolean));
+    mats.forEach(m => { for (const k of ['map', 'metalnessMap', 'roughnessMap', 'normalMap']) if (m[k]) m[k].dispose(); m.dispose(); });
+  });
+  group.clear();
+}
+
+function buildTabs(el, configs, onSelect) {
+  const holder = el.querySelector('.scene-tabs');
+  for (const cfg of configs) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'scene-tab'; b.dataset.asset = cfg.id;
+    b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Show ' + cfg.label);
+    const img = document.createElement('img'); img.src = cfg.preview; img.loading = 'lazy'; img.width = 300; img.height = 200;
+    img.alt = 'Render of the generated ' + cfg.label.toLowerCase();
+    const t = document.createElement('span'); t.textContent = cfg.label;
+    const s = document.createElement('small'); s.textContent = cfg.category;
+    b.append(img, t, s);
+    b.addEventListener('click', () => onSelect(cfg));
+    holder.append(b);
+  }
+}
+function showHeading(el, cfg) {
+  el.querySelectorAll('.scene-tab').forEach(b => { const on = b.dataset.asset === cfg.id; b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); });
+  el.querySelector('.asset-title').textContent = cfg.label;
+  el.querySelector('.asset-cat').textContent = cfg.category;
+  const ref = el.querySelector('.input-reference img'); ref.src = cfg.input; ref.alt = 'Input image of the ' + cfg.label.toLowerCase();
+}
+
+class AssetViewer {
+  constructor(el) {
+    this.el = el; this.canvas = el.querySelector('canvas'); this.loadId = 0; this.visible = true; this.mode = 'tex';
+    this.configs = window.PAGE_CONFIG.scenes;
+    this.overlay = el.querySelector('.ws-loader');
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    this.renderer.setClearColor(0x000000, 0);
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.NoToneMapping;   // keep base colours close to the texture
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(this.renderer), 0.04).texture;
+    pmrem.dispose();
+    this.root = new THREE.Group(); this.scene.add(this.root);
+    this.camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
+    this.controls = new OrbitControls(this.camera, this.canvas);
+    Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, autoRotate: !reducedMotion, autoRotateSpeed: 0.7,
+      minDistance: 0.4, maxDistance: 8, maxPolarAngle: Math.PI * 0.53 });
+    this.controls.addEventListener('start', () => this.setRotate(false));
+    this.scene.add(new THREE.HemisphereLight(0xfffaf0, 0xcbb894, 0.45));
+    const key = new THREE.DirectionalLight(0xfff4df, 1.25); key.position.set(-2.2, 4, 3);
+    key.castShadow = true; key.shadow.mapSize.set(1024, 1024);
+    Object.assign(key.shadow.camera, { left: -1.2, right: 1.2, top: 1.2, bottom: -1.2, near: 0.1, far: 12 });
+    key.shadow.bias = -0.0004; key.shadow.normalBias = 0.01; key.shadow.radius = 4;
+    this.scene.add(key);
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.42 }));
+    this.floor.rotation.x = -Math.PI / 2; this.floor.receiveShadow = true; this.scene.add(this.floor);
+    this.clay = new THREE.MeshStandardMaterial({ color: 0xb9b2a5, roughness: 0.8, metalness: 0, envMapIntensity: 0.7 });
+    this.buildTabs(); this.bind(); this.resize();
+    new ResizeObserver(() => this.resize()).observe(this.canvas);
+    new IntersectionObserver(es => { this.visible = es[0].isIntersecting; }, { rootMargin: '120px' }).observe(el);
+    this.renderer.setAnimationLoop(() => {
+      if (!this.visible || document.hidden) return;
+      this.controls.update(); this.renderer.render(this.scene, this.camera);
+    });
+    this.load(this.configs[0]);
+  }
+  buildTabs() {
+    buildTabs(this.el, this.configs, cfg => { this.load(cfg); this.el.querySelector('.viewer-shell').scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' }); });
+  }
+  bind() {
+    this.rotBtn = this.el.querySelector('.btn-rotate');
+    this.rotBtn.addEventListener('click', () => this.setRotate(!this.controls.autoRotate));
+    this.setRotate(this.controls.autoRotate);
+    this.el.querySelector('.btn-reset').addEventListener('click', () => this.frame());
+    this.el.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => this.setMode(b.dataset.mode)));
+    this.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.message('The 3D view was interrupted. Reload the page to continue.', true); });
+  }
+  setRotate(on) {
+    this.controls.autoRotate = on; this.rotBtn.classList.toggle('on', on); this.rotBtn.setAttribute('aria-pressed', String(on));
+  }
+  setMode(mode) {
+    this.mode = mode;
+    this.el.querySelectorAll('.seg button').forEach(b => { const on = b.dataset.mode === mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    this.root.traverse(o => { if (o.isMesh) o.material = mode === 'clay' ? o.userData.clayMat : o.userData.texMat; });
+  }
+  message(text, error) {
+    this.overlay.classList.add('show'); this.overlay.classList.toggle('error', !!error);
+    this.overlay.querySelector('.ws-loader-label').textContent = text;
+  }
+  async load(cfg) {
+    const id = ++this.loadId; this.cfg = cfg; this.el.dataset.ready = 'false';
+    showHeading(this.el, cfg);
+    this.message('Loading ' + cfg.label + '…', false);
+    try {
+      const buf = await glbBuffer(cfg);
+      if (id !== this.loadId) return;
+      const gltf = await parseGLB(buf);
+      if (id !== this.loadId) { disposeGroup(gltf.scene); return; }
+      disposeGroup(this.root);
+      gltf.scene.traverse(o => {
+        if (!o.isMesh) return;
+        o.castShadow = true; o.receiveShadow = false;
+        const m = o.material; m.envMapIntensity = 0.75; if (m.map) m.map.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+        o.userData.texMat = m; o.userData.clayMat = this.clay;
+        if (this.mode === 'clay') o.material = this.clay;
+      });
+      this.root.add(gltf.scene); this.root.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(this.root);
+      this.center = box.getCenter(new THREE.Vector3()); this.size = box.getSize(new THREE.Vector3());
+      this.floor.position.y = box.min.y - 0.002;
+      this.frame(); this.renderer.shadowMap.needsUpdate = true;
+      this.overlay.classList.remove('show'); this.el.dataset.ready = 'true'; this.el.dataset.asset = cfg.id;
+    } catch (err) {
+      if (id !== this.loadId) return;
+      console.error('Asset load failed:', cfg.id, err);
+      this.message('Could not load this asset. Choose another one or reload the page.', true);
+    }
+  }
+  frame() {
+    if (!this.center) return;
+    const r = this.size.length() / 2;
+    const vfov = THREE.MathUtils.degToRad(this.camera.fov);
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * this.camera.aspect);
+    const dist = r / Math.sin(Math.min(vfov, hfov) / 2) * 1.12;
+    const yaw = THREE.MathUtils.degToRad(this.cfg.yaw ?? 25), el = THREE.MathUtils.degToRad(14);
+    this.camera.position.copy(this.center).add(new THREE.Vector3(Math.sin(yaw) * Math.cos(el), Math.sin(el), Math.cos(yaw) * Math.cos(el)).multiplyScalar(dist));
+    this.camera.near = Math.max(0.005, dist / 100); this.camera.far = dist * 20; this.camera.updateProjectionMatrix();
+    this.controls.target.copy(this.center); this.controls.update();
+  }
+  resize() {
+    const w = this.canvas.clientWidth, h = this.canvas.clientHeight; if (!w || !h) return;
+    this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); if (this.center) this.frame();
+  }
+}
+
+for (const el of document.querySelectorAll('.ws-viewer')) {
+  const io = new IntersectionObserver(entries => {
+    if (!entries.some(e => e.isIntersecting)) return; io.disconnect();
+    try { el.viewer = new AssetViewer(el); }
+    catch (e) {
+      console.error(e);
+      const cfgs = window.PAGE_CONFIG.scenes, ov = el.querySelector('.ws-loader');
+      ov.classList.add('show', 'error');
+      ov.querySelector('.ws-loader-label').textContent = 'The 3D viewer needs WebGL, which is not available here. The renders below show each asset.';
+      if (!el.querySelector('.scene-tab')) { buildTabs(el, cfgs, cfg => showHeading(el, cfg)); showHeading(el, cfgs[0]); }
+    }
+  }, { rootMargin: '300px' });
+  io.observe(el);
+}
+</script>
+</body>
+</html>
