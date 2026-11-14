@@ -160,6 +160,12 @@ section{padding:64px 0}
 .sub-block{margin-top:52px}
 .sub-block .subhead{font:10px var(--mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
 .sub-block h3{font:600 clamp(22px,2.4vw,30px)/1.2 var(--display);letter-spacing:-.02em;margin-bottom:12px}
+/* compact table (TRELLIS.2 section): four columns, fits a phone without scrolling; interval under the value */
+.table-card.compact{max-width:860px}
+.res-table.res-compact{min-width:0}
+.res-table td small{display:block;font:9.5px var(--mono);letter-spacing:.06em;color:var(--dim);margin-top:3px}
+.small-note a{color:var(--link);border-bottom:1px solid transparent;transition:border-color .15s}
+.small-note a:hover{border-bottom-color:currentColor}
 
 /* --- bibtex --- */
 .bib-card{position:relative;padding:22px 24px}
@@ -215,6 +221,9 @@ section{padding:64px 0}
   .scene-tabs{display:flex;gap:11px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding-bottom:6px;scrollbar-width:thin}
   .scene-tab{flex:0 0 164px;scroll-snap-align:start}
   .res-table{font-size:12.5px}
+  .res-table.res-compact th,.res-table.res-compact td{padding-left:6px;padding-right:6px}
+  .res-table.res-compact th,.res-table.res-compact td:first-child{white-space:normal}
+  .res-table.res-compact th:first-child,.res-table.res-compact td:first-child{padding-left:10px}
   .footer-inner{gap:18px}
   .footer-inner>p{font-size:13px}
 }

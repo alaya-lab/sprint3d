@@ -157,6 +157,7 @@ window.PAGE_CONFIG = {
     <div class="nav-links">
       <a href="#demo">Outputs</a>
       <a href="#results">Results</a>
+      <a href="#trellis2">TRELLIS.2</a>
       <a href="#bibtex">BibTeX</a>
       <a class="nav-cta" href="#demo">Explore 3D</a>
     </div>
@@ -258,6 +259,25 @@ window.PAGE_CONFIG = {
       </table>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ================= TRELLIS.2: the rebuilt mesh path in a second pipeline (tables/tab_trellis2_meshpath_r1010.tex = Table 3 of the report; paragraph "A second pipeline" of Section 4.2) ================= -->
+<section id="trellis2" aria-labelledby="trellis2-title">
+  <div class="wrap">
+    <div class="section-heading reveal">
+      <h2 id="trellis2-title">TRELLIS.2<span>The rebuilt mesh post-processing in a second pipeline.</span></h2>
+      <div class="section-tag">TRELLIS.2-4B · 40-OBJECT SUBSET</div>
+    </div>
+    <p class="lead reveal">The rebuilt mesh post-processing alone also speeds up TRELLIS.2, which uses the same GLB export code, by 6.7× without a detectable change in the evaluated metrics.</p>
+    <div class="panel table-card compact reveal">
+      <table class="res-table res-compact">
+        <caption>TRELLIS.2-4B at its released settings. Medians on the 40-object subset of the validation set; 95% confidence interval in brackets.</caption>
+        <thead><tr><th>Configuration</th><th>End-to-end time<small>(s) ↓</small></th><th>Post-processing<small>(s) ↓</small></th><th><span class="nowrap">Speed-up</span><small>[95% CI]</small></th></tr></thead>
+        <tbody><tr><td>TRELLIS.2 (official)</td><td>112.7</td><td>91.4</td><td>–</td></tr><tr class="ours"><td><b>+ rebuilt mesh path</b></td><td><b>16.9</b></td><td><b>2.2</b></td><td><b>6.7×</b><small>[5.4, 8.6]</small></td></tr></tbody>
+      </table>
+    </div>
+    <p class="small-note after-table reveal">Only the mesh post-processing is carried over, not the flow engineering or the distilled students. The differences to TRELLIS.2 (official) in normal-map PSNR, mean angular error and base-color PSNR have confidence intervals that include zero, and a conservative estimate in the report still gives 5.7×. Running the mesh work concurrently with the texture flow does not save time in TRELLIS.2. The port wraps an unmodified TRELLIS.2 checkout; the commands are in the <a href="https://github.com/AlayaLab/sprint3d/blob/main/docs/REPRODUCE_PAPER.md#trellis2-port">code repository</a>.</p>
   </div>
 </section>
 
